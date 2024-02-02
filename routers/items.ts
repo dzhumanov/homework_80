@@ -6,7 +6,13 @@ import { imagesUpload } from "../multer";
 const itemsRouter = Router();
 
 itemsRouter.get("/", async (req, res) => {
-  const [results] = await mysqlDb.getConnection().query("SELECT * from items;");
+  const [results] = await mysqlDb
+    .getConnection()
+    .query(
+      "SELECT i.id, c.name categoryId, p.name placeId, i.name, i.description, i.image FROM items i " +
+        "LEFT JOIN coffeeshop.categories c on i.categoryId = c.id " +
+        "LEFT JOIN coffeeshop.places p on i.placeId = p.id"
+    );
   res.send(results);
 });
 
@@ -26,7 +32,7 @@ itemsRouter.get("/:id", async (req, res) => {
   res.send(item);
 });
 
-itemsRouter.post("/", imagesUpload.single('image'), async (req, res) => {
+itemsRouter.post("/", imagesUpload.single("image"), async (req, res) => {
   const item: itemWithoutId = {
     categoryId: req.body.categoryId,
     placeId: req.body.placeId,
