@@ -13,3 +13,14 @@ export interface place {
 }
 
 export type placeWithoutId = Omit<place, "id">;
+
+export interface item {
+    id: number;
+    categoryId: number;
+    placeId: number;
+    name: string;
+    description: string | null;
+    image: string | null;
+}
+
+export type itemWithoutId = Omit<item, "id">;

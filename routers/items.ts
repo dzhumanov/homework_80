@@ -1,0 +1,60 @@
+import { Router } from "express";
+import { categoryWithoutId, itemWithoutId } from "../types";
+import mysqlDb from "../mysqldb";
+import { ResultSetHeader, RowDataPacket } from "mysql2";
+import { imagesUpload } from "../multer";
+const itemsRouter = Router();
+
+itemsRouter.get("/", async (req, res) => {
+  const [results] = await mysqlDb.getConnection().query("SELECT * from items;");
+  res.send(results);
+});
+
+itemsRouter.get("/:id", async (req, res) => {
+  const [results] = (await mysqlDb
+    .getConnection()
+    .query("SELECT * FROM items " + "WHERE id = ?", [
+      req.params.id,
+    ])) as RowDataPacket[];
+
+  const item = results[0];
+
+  if (!item) {
+    return res.status(404).send({ error: "Not found!" });
+  }
+
+  res.send(item);
+});
+
+itemsRouter.post("/", imagesUpload.single('image'), async (req, res) => {
+  const item: itemWithoutId = {
+    categoryId: req.body.categoryId,
+    placeId: req.body.placeId,
+    name: req.body.name,
+    description: req.body.description,
+    image: req.file ? req.file.filename : null,
+  };
+
+  const [result] = (await mysqlDb
+    .getConnection()
+    .query(
+      "INSERT INTO items (categoryId, placeId, name, description, image)" +
+        "VALUES (?, ?, ?, ?, ?)",
+      [item.categoryId, item.placeId, item.name, item.description, item.image]
+    )) as ResultSetHeader[];
+
+  res.send({
+    id: result.insertId,
+    ...item,
+  });
+});
+
+itemsRouter.delete("/:id", async (req, res) => {
+  const [results] = await mysqlDb
+    .getConnection()
+    .query("DELETE FROM items WHERE id = ?", [req.params.id]);
+
+  res.send("Item deleted.");
+});
+
+export default itemsRouter;
